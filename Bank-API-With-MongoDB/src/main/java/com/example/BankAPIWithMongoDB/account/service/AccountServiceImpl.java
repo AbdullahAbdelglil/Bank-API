@@ -10,16 +10,17 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 
 @Service
-public class AccountServiceImpl implements AccountService{
+public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
 
-    private HazelcastInstance hazelcastInstance ;
+    private HazelcastInstance hazelcastInstance;
 
-    private IMap<Integer,Account> accountsImap;
+    private IMap<Integer, Account> accountsImap;
 
     private Integer lastId;
 
@@ -42,13 +43,25 @@ public class AccountServiceImpl implements AccountService{
 
             Optional<Account> dbAccount = accountRepository.findById(id);
 
-            if (dbAccount.isPresent()){
+            if (dbAccount.isPresent()) {
                 account = dbAccount.get();
-                accountsImap.put(account.get_id(),account);
+                accountsImap.put(account.get_id(), account);
             }
         }
 
         return account;
+    }
+
+    @Override
+    public Account getAccountByAccountNumber(String accountNumber) {
+
+        //if the passed account number don't contain '0001' at the end, append it. but
+        //note: to perform this operation; the account number in this case must achieve the account number formula.
+        if (accountNumber.length() == 10 && accountNumber.matches("^[A-Z]{2}00\\d{6}")) {
+            accountNumber = accountNumber.concat("0001");
+        }
+
+        return accountRepository.findAccountByAccountNumber(accountNumber);
     }
 
     @Override
@@ -58,60 +71,67 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public Boolean save(Account account) {
+    public Account save(Account account) {
 
-        account.setOwner(account.getOwner().toLowerCase());
+        String owner = account.getOwner();
 
+        if (owner != null) {
+            String accountNumber = generateAccountNumber(owner);
 
-        if (!accountRepository.existsAccountByOwner(account.getOwner())) {
+            //while the generated number is already in use, generate another one (not impossible !).
+            while (getAccountByAccountNumber(accountNumber) != null) {
+                accountNumber = generateAccountNumber(owner);
+            }
 
+            account.setAccountNumber(accountNumber);
             account.set_id(++lastId);
 
-            accountsImap.put(account.get_id(), account);
+            Double balance = account.getBalance();
 
+            //if there is no passed balance, or the balance<0, set it 0.
+            if (balance == null || balance < 0) account.setBalance(0.0);
+
+
+            accountsImap.put(account.get_id(), account);
             accountRepository.save(account);
 
-            return true;
+            return account;
         }
 
-        return false;
+        //don't accept any new account without owner name
+        else return null;
     }
 
     @Override
-    public Boolean update(Integer id, Account updatedAccount) {
-
-        updatedAccount.set_id(id);
+    public Account update(Integer id, Account updatedAccount) {
 
         Account dbAccount = getAccountById(id);
 
-        if(dbAccount!=null && dbAccount.equals(updatedAccount)) {
+        if (dbAccount != null) {
+
+            //if there is any passed id, or account number, ignore them.
+            updatedAccount.set_id(dbAccount.get_id());
+            updatedAccount.setAccountNumber(dbAccount.getAccountNumber());
+
+            //if the passed owner is null or>30 char, don't accept it.
+            String owner = updatedAccount.getOwner();
+            if (owner == null || owner.length() > 30) {
+                updatedAccount.setOwner(dbAccount.getOwner());
+            }
+
+            //if the passed owner is null, or<0, don't accept it.
+            if (updatedAccount.getBalance() == null || updatedAccount.getBalance() < 0) {
+                updatedAccount.setBalance(dbAccount.getBalance());
+            }
+
             accountsImap.put(id, updatedAccount);
             accountRepository.save(updatedAccount);
-            return true;
+
+            return updatedAccount;
         }
 
-        else if (dbAccount != null) {
-
-            String updatedOwner = updatedAccount.getOwner().toLowerCase();
-            String dbOwner = dbAccount.getOwner();
-
-            if (!(updatedOwner.isBlank() && updatedOwner.isEmpty())) {
-
-                updatedAccount.setOwner(updatedOwner);
-
-                if (!accountRepository.existsAccountByOwner(updatedOwner) ||
-                        updatedOwner.equals(dbOwner)) {
-
-                    accountsImap.put(id, updatedAccount);
-                    accountRepository.save(updatedAccount);
-
-                    return true;
-                }
-            }
-        }
-        return false;
+        return null;
     }
-
 
     @Override
     public Boolean deleteAccount(Integer id) {
@@ -125,9 +145,7 @@ public class AccountServiceImpl implements AccountService{
             accountRepository.deleteById(id);
 
             return true;
-        }
-
-        else if(accountRepository.existsById(id)) {
+        } else if (accountRepository.existsById(id)) {
 
             accountRepository.deleteById(id);
 
@@ -138,9 +156,9 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public Boolean withdraw(Integer accountId, Double value) {
+    public Boolean withdraw(String accountNumber, Double value) {
 
-        Account account = getAccountById(accountId);
+        Account account = getAccountByAccountNumber(accountNumber);
 
         if (account != null) {
 
@@ -152,7 +170,7 @@ public class AccountServiceImpl implements AccountService{
 
                 account.setBalance(accountBalance);
 
-                update(accountId, account);
+                update(account.get_id(), account);
 
                 return true;
             }
@@ -161,9 +179,9 @@ public class AccountServiceImpl implements AccountService{
     }
 
     @Override
-    public Boolean deposit(Integer accountId, Double value) {
+    public Boolean deposit(String accountNumber, Double value) {
 
-        Account account = getAccountById(accountId);
+        Account account = getAccountByAccountNumber(accountNumber);
 
         if (account != null) {
 
@@ -173,7 +191,7 @@ public class AccountServiceImpl implements AccountService{
 
             account.setBalance(accountBalance);
 
-            update(accountId, account);
+            update(account.get_id(), account);
 
             return true;
         }
@@ -183,18 +201,44 @@ public class AccountServiceImpl implements AccountService{
 
 
     @Override
-    public Boolean transfer(Integer from_AccountId, Integer to_AccountId, Double value) {
+    public Boolean transfer(String from_AccountNumber, String to_AccountNumber, Double value) {
 
-        return (withdraw(from_AccountId, value) && deposit(to_AccountId, value));
+        if (getAccountByAccountNumber(from_AccountNumber) != null
+            && getAccountByAccountNumber(to_AccountNumber) != null) {
+
+             withdraw(from_AccountNumber, value) ;
+             deposit(to_AccountNumber, value);
+
+             return true;
+        }
+        return false;
     }
 
     private Integer getLastId() {
 
         List<Account> accountList = getAllAccounts();
 
-        Account lastAccount =  accountList.get(accountList.size()-1);
+        if(accountList.isEmpty()) return 0;
 
+        Account lastAccount = accountList.get(accountList.size() - 1);
         return lastAccount.get_id();
 
+    }
+
+    @Override
+    public String generateAccountNumber(String owner) {
+
+        StringBuilder accountNumber = new StringBuilder();
+
+        accountNumber.append(owner.substring(0, 2).toUpperCase());
+        accountNumber.append("00");
+
+        Random random = new Random();
+        int randomNumber = random.nextInt(900000) + 100000;
+
+        accountNumber.append(randomNumber);
+        accountNumber.append("0001");
+
+        return accountNumber.toString();
     }
 }

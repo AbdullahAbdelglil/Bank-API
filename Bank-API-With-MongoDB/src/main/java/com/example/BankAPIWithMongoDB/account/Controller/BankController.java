@@ -24,17 +24,23 @@ public class BankController {
         return accountService.getAllAccounts();
     }
 
-    @GetMapping("/{accountId}")
-    public Account getAccountById(@PathVariable("accountId") Integer accountId) {
+    @GetMapping("/")
+    public Account getAccountByAccountNumber(@RequestParam("accountNumber") String accountNumber) {
+
+        return accountService.getAccountByAccountNumber(accountNumber);
+    }
+
+    @GetMapping("/{accountID}")
+    public Account getAccountById(@PathVariable("accountID") Integer accountId) {
 
         return accountService.getAccountById(accountId);
     }
 
-    @GetMapping("/{accountId}/deposit/{value}")
-    public String deposit(@PathVariable("accountId") Integer accountId,
-                          @PathVariable("value") Double value) {
+    @GetMapping("/deposit")
+    public String deposit(@RequestParam("amount") Double value,
+                          @RequestParam("accountNumber") String accountNumber) {
 
-        if(accountService.deposit(accountId, value)) {
+        if(accountService.deposit(accountNumber, value)) {
             return "Deposit process done successfully";
         }
 
@@ -42,16 +48,16 @@ public class BankController {
                 Deposit process failed.
                 
                 Quick fixes:
-                - Make sure that you have entered the correct ID.
+                - Make sure that you have entered the correct account number.
                 """;
     }
 
 
-    @GetMapping("/{accountId}/withdraw/{value}")
-    public String withdraw(@PathVariable("accountId") Integer accountId,
-                          @PathVariable("value") Double value) {
+    @GetMapping("/withdraw")
+    public String withdraw(@RequestParam("accountNumber") String accountNumber,
+                           @RequestParam("amount") Double value) {
 
-        if(accountService.withdraw(accountId, value)) {
+        if(accountService.withdraw(accountNumber, value)) {
             return "Withdrawal process done successfully";
         }
 
@@ -59,15 +65,15 @@ public class BankController {
                 Withdrawal process failed.
                 
                 Quick fixes:
-                - Make sure that you have entered the correct ID.
+                - Make sure that you have entered the correct account number.
                 - Make sure that your funds is enough.
                 """;
     }
 
-    @GetMapping("/transfer/{value}/from/{from-accountId}/to/{to-accountId}")
-    public String transfer(@PathVariable("from-accountId") Integer from,
-                                        @PathVariable("to-accountId") Integer to,
-                                        @PathVariable("value") Double value) {
+    @GetMapping("/transfer")
+    public String transfer(@RequestParam("amount") Double value,
+                           @RequestParam("from") String from,
+                           @RequestParam("to") String to ){
 
         if(accountService.transfer(from,to, value)) {
             return "transfer process done successfully";
@@ -77,35 +83,22 @@ public class BankController {
                 transfer process failed.
                 
                 Quick fixes:
-                - Make sure that you have entered the correct ID's.
+                - Make sure that you have entered the correct accounts numbers.
                 - Make sure that your funds is enough.
                 """;
     }
 
     @PutMapping("/{accountId}")
-    public String updateAccount(@PathVariable("accountId") Integer id,
-                                @RequestBody Account updatedAccount) {
+    public Account updateAccount(@PathVariable("accountId") Integer id,
+                                 @RequestBody Account updatedAccount) {
 
-        if(accountService.update(id, updatedAccount)) {
-            return updatedAccount.toString();
-        }
-
-        else return """
-                Updating failed !
-                
-                Quick fixes:
-                - Make sure that you have entered the correct ID.
-                - Choose another owner name.""";
+        return accountService.update(id, updatedAccount);
     }
 
     @PostMapping("")
-    public String addNewAccount(@RequestBody Account account) {
+    public Account addNewAccount(@RequestBody Account account) {
 
-        if(accountService.save(account)) {
-            return account.toString();
-        }
-
-        else return "This account already exist\nQuick fixes: Choose another owner name.";
+        return accountService.save(account);
     }
 
     @DeleteMapping("/{accountId}")

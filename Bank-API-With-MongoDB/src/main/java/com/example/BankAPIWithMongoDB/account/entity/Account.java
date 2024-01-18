@@ -19,29 +19,24 @@ public class Account {
     @Id
     private Integer _id;
 
+    private String accountNumber;
+
     private String owner;
 
     private Double balance;
+
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Account account = (Account) o;
-        return Objects.equals(_id, account._id) && Objects.equals(owner, account.owner) ;
+        return Objects.equals(_id, account._id) && Objects.equals(accountNumber, account.accountNumber) ;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(_id, owner);
+        return Objects.hash(_id, accountNumber);
     }
 
-    @Override
-    public String toString() {
-        return "{\n" +
-                "\t\"id\": " + _id +
-                "\n\t\"owner\": " + owner +
-                "\n\t\"balance\": " + balance +
-                "\n}";
-    }
 }

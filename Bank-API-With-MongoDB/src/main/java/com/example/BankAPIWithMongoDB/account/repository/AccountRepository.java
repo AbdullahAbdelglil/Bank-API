@@ -8,4 +8,5 @@ import java.util.Set;
 
 public interface AccountRepository extends MongoRepository<Account,Integer> {
     boolean existsAccountByOwner(String owner);
+    Account findAccountByAccountNumber(String accountNumber);
 }

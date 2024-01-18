@@ -5,19 +5,24 @@ import com.example.BankAPIWithMongoDB.account.entity.Account;
 import java.util.List;
 
 public interface AccountService {
+    String generateAccountNumber(String owner);
 
-    Boolean save(Account account);
-    Boolean update(Integer id, Account updatedAccount);
+    Account save(Account account);
+
+    Account update(Integer id, Account updatedAccount);
+
     Account getAccountById(Integer id);
+
+    Account getAccountByAccountNumber(String accountNumber);
 
     List<Account> getAllAccounts();
 
     Boolean deleteAccount(Integer id);
 
-    Boolean withdraw(Integer accountId, Double value);
+    Boolean withdraw(String accountId, Double value);
 
-    Boolean deposit (Integer accountId, Double value);
+    Boolean deposit(String accountId, Double value);
 
-    Boolean transfer(Integer fromAccountId, Integer toAccountId, Double value);
+    Boolean transfer(String fromAccountNumber, String toAccountNumber, Double value);
 
 }

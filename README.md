@@ -59,15 +59,16 @@ To use the API, refer to the [Endpoints](#endpoints) section below.
 
    - **GET /V1/accounts:** Get all accounts
    - **GET /V1/accounts/{id}:** Get account by ID
+   - **GET /V1/accounts?accountNumber={accountNumber}:** Get account by accountNumber
    - **POST /V1/accounts:** Create a new account
    - **PUT /V1/accounts/{id}:** Update an existing account
    - **DELETE /V1/accounts/{id}:** Delete an account
 
 2. **Bank Operations:**
 
-   - **GET /V1/accounts/{accountId}/withdraw/{amount}:** Withdraw funds from an account.
-   - **GET /V1/accounts/{accountId}/deposit/{amount}:** Deposit funds into an account.
-   - **GET /V1/accounts/transfer/{value}/from/{from-accountId}/to/{to-accountId}** Transfer funds from one account to another.
+   - **GET /V1/accounts/withdraw?amount={amount}&accountNumber={accountNumber}:** Withdraw funds from an account.
+   - **GET /V1/accounts/deposit?amount={amount}&accountNumber={accountNumber}:** Deposit funds into an account.
+   - **GET /V1/accounts/transfer?amount={amount}&from={accountNumber}&to={accountNumber}** Transfer funds from one account to another.
 
 ## Database
 
