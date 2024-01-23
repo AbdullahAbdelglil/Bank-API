@@ -24,21 +24,15 @@ public class BankController {
         return accountService.getAllAccounts();
     }
 
-    @GetMapping("/")
-    public Account getAccountByAccountNumber(@RequestParam("accountNumber") String accountNumber) {
+    @GetMapping("/{accountNumber}")
+    public Account getAccountByAccountNumber(@PathVariable("accountNumber") String accountNumber) {
 
         return accountService.getAccountByAccountNumber(accountNumber);
     }
 
-    @GetMapping("/{accountID}")
-    public Account getAccountById(@PathVariable("accountID") Integer accountId) {
-
-        return accountService.getAccountById(accountId);
-    }
-
-    @GetMapping("/deposit")
-    public String deposit(@RequestParam("amount") Double value,
-                          @RequestParam("accountNumber") String accountNumber) {
+    @GetMapping("/deposit/{amount}/in/{accountNumber}")
+    public String deposit(@PathVariable("amount") Double value,
+                          @PathVariable("accountNumber") String accountNumber) {
 
         if(accountService.deposit(accountNumber, value)) {
             return "Deposit process done successfully";
@@ -53,9 +47,9 @@ public class BankController {
     }
 
 
-    @GetMapping("/withdraw")
-    public String withdraw(@RequestParam("accountNumber") String accountNumber,
-                           @RequestParam("amount") Double value) {
+    @GetMapping("/withdraw/{amount}/form/{accountNumber}")
+    public String withdraw(@PathVariable("accountNumber") String accountNumber,
+                           @PathVariable("amount") Double value) {
 
         if(accountService.withdraw(accountNumber, value)) {
             return "Withdrawal process done successfully";
@@ -70,10 +64,10 @@ public class BankController {
                 """;
     }
 
-    @GetMapping("/transfer")
-    public String transfer(@RequestParam("amount") Double value,
-                           @RequestParam("from") String from,
-                           @RequestParam("to") String to ){
+    @GetMapping("/transfer/{amount}/from/{from_accNum}/to/{to_accNum}")
+    public String transfer(@PathVariable("amount") Double value,
+                           @PathVariable("from_accNum") String from,
+                           @PathVariable("to_accNum") String to ){
 
         if(accountService.transfer(from,to, value)) {
             return "transfer process done successfully";
@@ -88,11 +82,11 @@ public class BankController {
                 """;
     }
 
-    @PutMapping("/{accountId}")
-    public Account updateAccount(@PathVariable("accountId") Integer id,
+    @PutMapping("/{accountNumber}")
+    public Account updateAccount(@PathVariable("accountNumber") String accountNumber,
                                  @RequestBody Account updatedAccount) {
 
-        return accountService.update(id, updatedAccount);
+        return accountService.update(accountNumber, updatedAccount);
     }
 
     @PostMapping("")

@@ -1,12 +1,11 @@
 package com.example.BankAPIWithMongoDB;
 
+import com.example.BankAPIWithMongoDB.util.MongoDataCopy;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.util.ConcurrentLruCache;
-
-import java.util.Random;
 
 
 @SpringBootApplication
@@ -17,11 +16,22 @@ public class BankApiWithMongoDbApplication {
 
 	}
 
+	@Value("${quarter}")
+	Integer quarter;
+
 	@Bean
 	CommandLineRunner commandLineRunner (String[] args) {
-		return runner -> {
+		return runner ->{
+			MongoDataCopy mongoDataCopy = new MongoDataCopy("mongodb://localhost:27017",
+															"bank",
+															"bank_V2",
+															"accounts",
+															"accounts");
 
+
+			mongoDataCopy.copyQuarter(2023,quarter);
 		};
 	}
+
 
 }

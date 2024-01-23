@@ -9,7 +9,7 @@ public interface AccountService {
 
     Account save(Account account);
 
-    Account update(Integer id, Account updatedAccount);
+    Account update(String accountNumber, Account updatedAccount);
 
     Account getAccountById(Integer id);
 

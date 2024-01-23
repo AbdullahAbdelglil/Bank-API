@@ -8,6 +8,10 @@ import com.hazelcast.map.IMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Formatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -85,6 +89,7 @@ public class AccountServiceImpl implements AccountService {
 
             account.setAccountNumber(accountNumber);
             account.set_id(++lastId);
+            account.setCreation_date(LocalDate.now());
 
             Double balance = account.getBalance();
 
@@ -103,15 +108,16 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public Account update(Integer id, Account updatedAccount) {
+    public Account update(String accountNumber, Account updatedAccount) {
 
-        Account dbAccount = getAccountById(id);
+        Account dbAccount = getAccountByAccountNumber(accountNumber);
 
         if (dbAccount != null) {
 
             //if there is any passed id, or account number, ignore them.
             updatedAccount.set_id(dbAccount.get_id());
             updatedAccount.setAccountNumber(dbAccount.getAccountNumber());
+            updatedAccount.setCreation_date(dbAccount.getCreation_date());
 
             //if the passed owner is null or>30 char, don't accept it.
             String owner = updatedAccount.getOwner();
@@ -124,7 +130,7 @@ public class AccountServiceImpl implements AccountService {
                 updatedAccount.setBalance(dbAccount.getBalance());
             }
 
-            accountsImap.put(id, updatedAccount);
+            accountsImap.put(dbAccount.get_id(), updatedAccount);
             accountRepository.save(updatedAccount);
 
             return updatedAccount;
@@ -170,7 +176,7 @@ public class AccountServiceImpl implements AccountService {
 
                 account.setBalance(accountBalance);
 
-                update(account.get_id(), account);
+                update(account.getAccountNumber(), account);
 
                 return true;
             }
@@ -191,7 +197,7 @@ public class AccountServiceImpl implements AccountService {
 
             account.setBalance(accountBalance);
 
-            update(account.get_id(), account);
+            update(account.getAccountNumber(), account);
 
             return true;
         }
